@@ -6,11 +6,12 @@
 use strict;
 use warnings;
 
-use Test::More tests => 34;
+use Test::More tests => 37;
 use List::Util qw(min max);
 BEGIN { use_ok('DBIx::Brev') };
 use File::Temp qw/ tempfile /;
 use File::Copy qw(move);
+use Data::Dumper;
 
 #########################
 
@@ -34,6 +35,8 @@ test_sql_hash();
 test_sql_query_hash();
 test_sql_in();
 test_quote();
+test_without_config();
+test_without_sqlsplit();
 test_fork();
 
 # destroy database
@@ -116,7 +119,11 @@ sub test_transaction {
 }
 
 sub test_inserts {
-    my $records_affected = inserts("insert into t1",$records);
+    my $records_str = [map join(",",@$_), @$records];
+    #print Dumper($records_str);
+    my $records_affected = inserts("insert into t1",$records_str);
+    is($records_affected, sql_exec("delete from t1"), "inserts string records_affected");
+    $records_affected = inserts("insert into t1",$records);
     is($records_affected, @$records, "inserts records_affected");
 }
 
@@ -167,7 +174,7 @@ sub test_sql_value {
 sub test_load_config {
     # create config file on the fly
     my ($fh,$config_file) = tempfile();
-    print $fh qq{<database dbm>\ndsn=dbi:SQLite:dbname=$db_file\n</database>};
+    print $fh qq{<database dbm>\ndata_source=dbi:SQLite:dbname=$db_file\n</database>};
     close($fh);
     # load config using $ENV{DBI_CONF}
     $ENV{DBI_CONF} = $config_file;
@@ -197,7 +204,7 @@ sub test_load_config {
         is_deeply(\%config2,\%config,q{load config from HOME directory});
     };
     unlink $config_file;
-    is($config{database}{dbm}{dsn},"dbi:SQLite:dbname=$db_file",'config file dsn');
+    is($config{database}{dbm}{data_source},"dbi:SQLite:dbname=$db_file",'config file data_source');
 }
 
 sub test_fork {
@@ -212,3 +219,21 @@ sub test_fork {
         is(sql_value("select 1"),1,"dbc after forked child");
     }
 }
+
+sub test_without_config {
+    $DBIx::Brev::use_config = 0;
+    $DBIx::Brev::use_dbc = 0;
+    my $dbh = db_use("dbi:SQLite:dbname=$db_file");
+    #print Dumper($dbh);
+    ok($dbh,"without config");
+    #ok($dbh->isa('DBI::db'),"without dbc");
+    $DBIx::Brev::use_config = 1;
+    $DBIx::Brev::use_dbc = 1;
+}
+sub test_without_sqlsplit {
+    $DBIx::Brev::use_sqlsplit = 0;
+    my $r = sql_exec("update t1 set a=a+1");
+    ok($r==3,"without split");
+    $DBIx::Brev::use_sqlsplit = 1;
+}
+

@@ -1,11 +1,11 @@
-DBI-Brev version 0.01
+DBI-Brev version 0.02
 =====================
 
-Brevity is the soul of wit. (From Shakespeare's Hamlet)
+Brevity is the soul of wit.
 
 This module provides framework for laconic DBI.
 
-It's suitable for one lines and also if you like laconic style in code.
+It's suitable for one liners and also if you like laconic style in code.
 
 Under the hood:
 * DBIx::Connector dbh auto-recovering
@@ -20,13 +20,17 @@ To install this module type the following:
    make
    make test
    make install
+   
+Notice: it can be used without installation - just download DBIx/Brev.pm and put it where perl will be able to find it.
 
 DEPENDENCIES
 
-This module requires these other modules and libraries:
+This module can use but not requires (can work without) these modules:
 
 DBIx::Connector
 Config::General
+SQL::SplitStatement
+
 
 COPYRIGHT AND LICENCE
 
